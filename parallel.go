@@ -5,18 +5,18 @@ import (
 	"reflect"
 	"sync"
 
-	routing "github.com/libp2p/go-libp2p-routing"
-	ropts "github.com/libp2p/go-libp2p-routing/options"
+	routing "github.com/dms3-p2p/go-p2p-routing"
+	ropts "github.com/dms3-p2p/go-p2p-routing/options"
 
 	multierror "github.com/hashicorp/go-multierror"
-	cid "github.com/ipfs/go-cid"
-	ci "github.com/libp2p/go-libp2p-crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	cid "github.com/dms3-fs/go-cid"
+	ci "github.com/dms3-p2p/go-p2p-crypto"
+	peer "github.com/dms3-p2p/go-p2p-peer"
+	pstore "github.com/dms3-p2p/go-p2p-peerstore"
 )
 
 // Parallel operates on the slice of routers in parallel.
-type Parallel []routing.IpfsRouting
+type Parallel []routing.Dms3FsRouting
 
 // Helper function that sees through router composition to avoid unnecessary
 // go routines.
@@ -97,7 +97,7 @@ func supportsContent(vs routing.ContentRouting) bool {
 	}
 }
 
-func (r Parallel) filter(filter func(routing.IpfsRouting) bool) Parallel {
+func (r Parallel) filter(filter func(routing.Dms3FsRouting) bool) Parallel {
 	cpy := make(Parallel, 0, len(r))
 	for _, ri := range r {
 		if filter(ri) {
@@ -107,7 +107,7 @@ func (r Parallel) filter(filter func(routing.IpfsRouting) bool) Parallel {
 	return cpy
 }
 
-func (r Parallel) put(do func(routing.IpfsRouting) error) error {
+func (r Parallel) put(do func(routing.Dms3FsRouting) error) error {
 	switch len(r) {
 	case 0:
 		return routing.ErrNotSupported
@@ -119,7 +119,7 @@ func (r Parallel) put(do func(routing.IpfsRouting) error) error {
 	results := make([]error, len(r))
 	wg.Add(len(r))
 	for i, ri := range r {
-		go func(ri routing.IpfsRouting, i int) {
+		go func(ri routing.Dms3FsRouting, i int) {
 			results[i] = do(ri)
 			wg.Done()
 		}(ri, i)
@@ -148,7 +148,7 @@ func (r Parallel) put(do func(routing.IpfsRouting) error) error {
 	}
 }
 
-func (r Parallel) get(ctx context.Context, do func(routing.IpfsRouting) (interface{}, error)) (interface{}, error) {
+func (r Parallel) get(ctx context.Context, do func(routing.Dms3FsRouting) (interface{}, error)) (interface{}, error) {
 	switch len(r) {
 	case 0:
 		return nil, routing.ErrNotFound
@@ -164,7 +164,7 @@ func (r Parallel) get(ctx context.Context, do func(routing.IpfsRouting) (interfa
 		err error
 	})
 	for _, ri := range r {
-		go func(ri routing.IpfsRouting) {
+		go func(ri routing.Dms3FsRouting) {
 			value, err := do(ri)
 			select {
 			case results <- struct {
@@ -211,19 +211,19 @@ func (r Parallel) get(ctx context.Context, do func(routing.IpfsRouting) (interfa
 }
 
 func (r Parallel) forKey(key string) Parallel {
-	return r.filter(func(ri routing.IpfsRouting) bool {
+	return r.filter(func(ri routing.Dms3FsRouting) bool {
 		return supportsKey(ri, key)
 	})
 }
 
 func (r Parallel) PutValue(ctx context.Context, key string, value []byte, opts ...ropts.Option) error {
-	return r.forKey(key).put(func(ri routing.IpfsRouting) error {
+	return r.forKey(key).put(func(ri routing.Dms3FsRouting) error {
 		return ri.PutValue(ctx, key, value, opts...)
 	})
 }
 
 func (r Parallel) GetValue(ctx context.Context, key string, opts ...ropts.Option) ([]byte, error) {
-	vInt, err := r.forKey(key).get(ctx, func(ri routing.IpfsRouting) (interface{}, error) {
+	vInt, err := r.forKey(key).get(ctx, func(ri routing.Dms3FsRouting) (interface{}, error) {
 		return ri.GetValue(ctx, key, opts...)
 	})
 	val, _ := vInt.([]byte)
@@ -233,7 +233,7 @@ func (r Parallel) GetValue(ctx context.Context, key string, opts ...ropts.Option
 func (r Parallel) GetPublicKey(ctx context.Context, p peer.ID) (ci.PubKey, error) {
 	vInt, err := r.
 		forKey(routing.KeyForPublicKey(p)).
-		get(ctx, func(ri routing.IpfsRouting) (interface{}, error) {
+		get(ctx, func(ri routing.Dms3FsRouting) (interface{}, error) {
 			return routing.GetPublicKey(ri, ctx, p)
 		})
 	val, _ := vInt.(ci.PubKey)
@@ -241,9 +241,9 @@ func (r Parallel) GetPublicKey(ctx context.Context, p peer.ID) (ci.PubKey, error
 }
 
 func (r Parallel) FindPeer(ctx context.Context, p peer.ID) (pstore.PeerInfo, error) {
-	vInt, err := r.filter(func(ri routing.IpfsRouting) bool {
+	vInt, err := r.filter(func(ri routing.Dms3FsRouting) bool {
 		return supportsPeer(ri)
-	}).get(ctx, func(ri routing.IpfsRouting) (interface{}, error) {
+	}).get(ctx, func(ri routing.Dms3FsRouting) (interface{}, error) {
 		return ri.FindPeer(ctx, p)
 	})
 	pi, _ := vInt.(pstore.PeerInfo)
@@ -251,15 +251,15 @@ func (r Parallel) FindPeer(ctx context.Context, p peer.ID) (pstore.PeerInfo, err
 }
 
 func (r Parallel) Provide(ctx context.Context, c *cid.Cid, local bool) error {
-	return r.filter(func(ri routing.IpfsRouting) bool {
+	return r.filter(func(ri routing.Dms3FsRouting) bool {
 		return supportsContent(ri)
-	}).put(func(ri routing.IpfsRouting) error {
+	}).put(func(ri routing.Dms3FsRouting) error {
 		return ri.Provide(ctx, c, local)
 	})
 }
 
 func (r Parallel) FindProvidersAsync(ctx context.Context, c *cid.Cid, count int) <-chan pstore.PeerInfo {
-	routers := r.filter(func(ri routing.IpfsRouting) bool {
+	routers := r.filter(func(ri routing.Dms3FsRouting) bool {
 		return supportsContent(ri)
 	})
 
@@ -394,4 +394,4 @@ func (r Parallel) Bootstrap(ctx context.Context) error {
 	return me.ErrorOrNil()
 }
 
-var _ routing.IpfsRouting = (Parallel)(nil)
+var _ routing.Dms3FsRouting = (Parallel)(nil)

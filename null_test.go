@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	peer "github.com/libp2p/go-libp2p-peer"
-	routing "github.com/libp2p/go-libp2p-routing"
+	peer "github.com/dms3-p2p/go-p2p-peer"
+	routing "github.com/dms3-p2p/go-p2p-routing"
 )
 
 func TestNull(t *testing.T) {

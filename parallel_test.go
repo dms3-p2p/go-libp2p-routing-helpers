@@ -7,10 +7,10 @@ import (
 	"time"
 
 	errwrap "github.com/hashicorp/errwrap"
-	cid "github.com/ipfs/go-cid"
-	peer "github.com/libp2p/go-libp2p-peer"
-	routing "github.com/libp2p/go-libp2p-routing"
-	mh "github.com/multiformats/go-multihash"
+	cid "github.com/dms3-fs/go-cid"
+	peer "github.com/dms3-p2p/go-p2p-peer"
+	routing "github.com/dms3-p2p/go-p2p-routing"
+	mh "github.com/dms3-mft/go-multihash"
 )
 
 // NOTE: While this test is primarily testing the Parallel combinator, it also
@@ -56,7 +56,7 @@ func TestParallelPutGet(t *testing.T) {
 	if err := d.PutValue(ctx, "/allow1/hello", []byte("world")); err != nil {
 		t.Fatal(err)
 	}
-	for _, di := range append([]routing.IpfsRouting{d}, d[:3]...) {
+	for _, di := range append([]routing.Dms3FsRouting{d}, d[:3]...) {
 		v, err := di.GetValue(ctx, "/allow1/hello")
 		if err != nil {
 			t.Fatal(err)
@@ -69,7 +69,7 @@ func TestParallelPutGet(t *testing.T) {
 	if err := d.PutValue(ctx, "/allow2/hello", []byte("world2")); err != nil {
 		t.Fatal(err)
 	}
-	for _, di := range append([]routing.IpfsRouting{d}, d[:1]...) {
+	for _, di := range append([]routing.Dms3FsRouting{d}, d[:1]...) {
 		v, err := di.GetValue(ctx, "/allow2/hello")
 		if err != nil {
 			t.Fatal(err)
@@ -81,7 +81,7 @@ func TestParallelPutGet(t *testing.T) {
 	if err := d.PutValue(ctx, "/forbidden/hello", []byte("world")); err != routing.ErrNotSupported {
 		t.Fatalf("expected ErrNotSupported, got: %s", err)
 	}
-	for _, di := range append([]routing.IpfsRouting{d}, d...) {
+	for _, di := range append([]routing.Dms3FsRouting{d}, d...) {
 		_, err := di.GetValue(ctx, "/forbidden/hello")
 		if err != routing.ErrNotFound {
 			t.Fatalf("expected ErrNotFound, got: %s", err)
@@ -342,7 +342,7 @@ func TestParallelFindPeer(t *testing.T) {
 
 	ctx := context.Background()
 
-	for _, di := range append([]routing.IpfsRouting{d}, d[4:]...) {
+	for _, di := range append([]routing.Dms3FsRouting{d}, d[4:]...) {
 		if _, err := di.FindPeer(ctx, "first"); err != nil {
 			t.Fatal(err)
 		}

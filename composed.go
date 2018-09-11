@@ -4,12 +4,12 @@ import (
 	"context"
 
 	multierror "github.com/hashicorp/go-multierror"
-	cid "github.com/ipfs/go-cid"
-	ci "github.com/libp2p/go-libp2p-crypto"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
-	routing "github.com/libp2p/go-libp2p-routing"
-	ropts "github.com/libp2p/go-libp2p-routing/options"
+	cid "github.com/dms3-fs/go-cid"
+	ci "github.com/dms3-p2p/go-p2p-crypto"
+	peer "github.com/dms3-p2p/go-p2p-peer"
+	pstore "github.com/dms3-p2p/go-p2p-peerstore"
+	routing "github.com/dms3-p2p/go-p2p-routing"
+	ropts "github.com/dms3-p2p/go-p2p-routing/options"
 )
 
 // Compose composes the components into a single router. Not specifying a
@@ -109,5 +109,5 @@ func (cr *Compose) Bootstrap(ctx context.Context) error {
 	return me.ErrorOrNil()
 }
 
-var _ routing.IpfsRouting = (*Compose)(nil)
+var _ routing.Dms3FsRouting = (*Compose)(nil)
 var _ routing.PubKeyFetcher = (*Compose)(nil)

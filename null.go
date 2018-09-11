@@ -3,12 +3,12 @@ package routinghelpers
 import (
 	"context"
 
-	routing "github.com/libp2p/go-libp2p-routing"
-	ropts "github.com/libp2p/go-libp2p-routing/options"
+	routing "github.com/dms3-p2p/go-p2p-routing"
+	ropts "github.com/dms3-p2p/go-p2p-routing/options"
 
-	cid "github.com/ipfs/go-cid"
-	peer "github.com/libp2p/go-libp2p-peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	cid "github.com/dms3-fs/go-cid"
+	peer "github.com/dms3-p2p/go-p2p-peer"
+	pstore "github.com/dms3-p2p/go-p2p-peerstore"
 )
 
 // Null is a router that doesn't do anything.
@@ -46,4 +46,4 @@ func (nr Null) Bootstrap(context.Context) error {
 	return nil
 }
 
-var _ routing.IpfsRouting = Null{}
+var _ routing.Dms3FsRouting = Null{}
